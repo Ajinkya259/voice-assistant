@@ -28,6 +28,14 @@ export default async function DashboardPage() {
     .eq('user_id', user!.id)
     .single();
 
+  // Get recent conversations
+  const { data: recentConversations } = await supabase
+    .from('conversations')
+    .select('*')
+    .eq('user_id', user!.id)
+    .order('updated_at', { ascending: false })
+    .limit(5);
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       {/* Welcome Section */}
@@ -123,17 +131,46 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      {/* Recent Conversations placeholder */}
+      {/* Recent Conversations */}
       <div className="mt-8">
         <h2 className="mb-4 text-lg font-semibold text-text-primary">Recent Conversations</h2>
-        <Card variant="outlined" className="p-8 text-center">
-          <Clock className="mx-auto h-12 w-12 text-text-muted" />
-          <p className="mt-4 text-text-secondary">No conversations yet</p>
-          <p className="text-sm text-text-muted">Start chatting to see your history here</p>
-          <Button className="mt-4" asChild>
-            <Link href="/dashboard/chat">Start a conversation</Link>
-          </Button>
-        </Card>
+        {recentConversations && recentConversations.length > 0 ? (
+          <Card variant="outlined" className="divide-y divide-border-light">
+            {recentConversations.map((conversation) => (
+              <Link
+                key={conversation.id}
+                href={`/dashboard/chat?c=${conversation.id}`}
+                className="flex items-center gap-3 p-4 hover:bg-surface-200 transition-colors"
+              >
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-200">
+                  <MessageSquare className="h-4 w-4 text-text-secondary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-text-primary truncate">
+                    {conversation.title || 'New Chat'}
+                  </p>
+                  <p className="text-xs text-text-muted">
+                    {new Date(conversation.updated_at).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </Card>
+        ) : (
+          <Card variant="outlined" className="p-8 text-center">
+            <Clock className="mx-auto h-12 w-12 text-text-muted" />
+            <p className="mt-4 text-text-secondary">No conversations yet</p>
+            <p className="text-sm text-text-muted">Start chatting to see your history here</p>
+            <Button className="mt-4" asChild>
+              <Link href="/dashboard/chat">Start a conversation</Link>
+            </Button>
+          </Card>
+        )}
       </div>
     </div>
   );
