@@ -1,0 +1,266 @@
+@import "tailwindcss";
+
+/* ============================================
+   Voice Assistant Design System
+   Theme: Soft, Light Colors - Minimalist
+   ============================================ */
+
+:root {
+  /* Background Colors */
+  --background: #fafaf9;
+  --background-secondary: #f5f5f4;
+
+  /* Surface Colors */
+  --surface-100: #ffffff;
+  --surface-200: #f5f5f4;
+  --surface-300: #e7e5e4;
+  --surface-400: #d6d3d1;
+
+  /* Primary Colors (Subtle Blue) */
+  --primary-50: #f0f9ff;
+  --primary-100: #e0f2fe;
+  --primary-200: #bae6fd;
+  --primary-300: #7dd3fc;
+  --primary-400: #38bdf8;
+  --primary-500: #0ea5e9;
+  --primary-600: #0284c7;
+  --primary-700: #0369a1;
+
+  /* Accent Colors (Voice Indicators) */
+  --accent-voice: #a78bfa;
+  --accent-voice-light: #c4b5fd;
+  --accent-active: #34d399;
+  --accent-listening: #f472b6;
+  --accent-speaking: #60a5fa;
+
+  /* Text Colors */
+  --text-primary: #44403c;
+  --text-secondary: #78716c;
+  --text-muted: #a8a29e;
+  --text-inverse: #fafaf9;
+
+  /* Border Colors */
+  --border-light: #e7e5e4;
+  --border-default: #d6d3d1;
+  --border-dark: #a8a29e;
+
+  /* Semantic Colors */
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #3b82f6;
+
+  /* Shadows */
+  --shadow-soft: 0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 1px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-medium: 0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 2px 10px -3px rgba(0, 0, 0, 0.05);
+  --shadow-large: 0 10px 40px -10px rgba(0, 0, 0, 0.15);
+
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Typography */
+  --font-sans: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow: 350ms ease;
+
+  /* Foreground (for compatibility) */
+  --foreground: var(--text-primary);
+}
+
+/* Tailwind v4 Theme Configuration */
+@theme inline {
+  /* Colors */
+  --color-background: var(--background);
+  --color-background-secondary: var(--background-secondary);
+  --color-foreground: var(--foreground);
+
+  --color-surface-100: var(--surface-100);
+  --color-surface-200: var(--surface-200);
+  --color-surface-300: var(--surface-300);
+  --color-surface-400: var(--surface-400);
+
+  --color-primary-50: var(--primary-50);
+  --color-primary-100: var(--primary-100);
+  --color-primary-200: var(--primary-200);
+  --color-primary-300: var(--primary-300);
+  --color-primary-400: var(--primary-400);
+  --color-primary-500: var(--primary-500);
+  --color-primary-600: var(--primary-600);
+  --color-primary-700: var(--primary-700);
+
+  --color-accent-voice: var(--accent-voice);
+  --color-accent-voice-light: var(--accent-voice-light);
+  --color-accent-active: var(--accent-active);
+  --color-accent-listening: var(--accent-listening);
+  --color-accent-speaking: var(--accent-speaking);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-inverse: var(--text-inverse);
+
+  --color-border-light: var(--border-light);
+  --color-border-default: var(--border-default);
+  --color-border-dark: var(--border-dark);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+
+  /* Font Families */
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  /* Border Radius */
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+  --radius-full: var(--radius-full);
+}
+
+/* Base Styles */
+body {
+  background: var(--background);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Animations */
+@keyframes voice-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+@keyframes typing-dots {
+  0%, 60%, 100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Animation Utilities */
+.animate-voice-pulse {
+  animation: voice-pulse 2s ease-in-out infinite;
+}
+
+.animate-typing-dots {
+  animation: typing-dots 1.4s ease-in-out infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--surface-200) 25%,
+    var(--surface-100) 50%,
+    var(--surface-200) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface-200);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-400);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Focus Styles */
+:focus-visible {
+  outline: 2px solid var(--primary-500);
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background: var(--primary-200);
+  color: var(--primary-700);
+}

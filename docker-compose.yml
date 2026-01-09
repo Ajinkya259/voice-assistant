@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    env_file:
+      - ./frontend/.env.local
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - agent
+
+  # Voice Agent (Python)
+  agent:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./agent/.env
+    volumes:
+      - ./agent:/app
+    restart: unless-stopped
+
+  # Local Qdrant (optional - for local development without cloud)
+  # qdrant:
+  #   image: qdrant/qdrant:latest
+  #   ports:
+  #     - "6333:6333"
+  #     - "6334:6334"
+  #   volumes:
+  #     - qdrant_data:/qdrant/storage
+
+# volumes:
+#   qdrant_data:
