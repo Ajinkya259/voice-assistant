@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { Slot } from '@radix-ui/react-slot';
 import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 
@@ -10,6 +11,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  asChild?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -23,6 +25,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       rightIcon,
       disabled,
       children,
+      asChild = false,
       ...props
     },
     ref
@@ -44,17 +47,27 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       lg: 'h-12 px-6 text-base rounded-xl',
     };
 
+    const buttonClassName = cn(
+      'inline-flex items-center justify-center gap-2 font-medium transition-all duration-150',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2',
+      'disabled:pointer-events-none disabled:opacity-50',
+      variants[variant],
+      sizes[size],
+      className
+    );
+
+    if (asChild) {
+      return (
+        <Slot ref={ref} className={buttonClassName} {...props}>
+          {children}
+        </Slot>
+      );
+    }
+
     return (
       <button
         ref={ref}
-        className={cn(
-          'inline-flex items-center justify-center gap-2 font-medium transition-all duration-150',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2',
-          'disabled:pointer-events-none disabled:opacity-50',
-          variants[variant],
-          sizes[size],
-          className
-        )}
+        className={buttonClassName}
         disabled={disabled || isLoading}
         {...props}
       >
