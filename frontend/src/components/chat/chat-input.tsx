@@ -2,15 +2,17 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { VoiceButton } from '@/components/voice';
 import { Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
   disabled?: boolean;
+  showVoice?: boolean;
 }
 
-export function ChatInput({ onSend, disabled }: ChatInputProps) {
+export function ChatInput({ onSend, disabled, showVoice = true }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -60,6 +62,9 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
             'transition-all duration-150'
           )}
         />
+        {showVoice && (
+          <VoiceButton className="shrink-0 h-[46px] w-[46px]" />
+        )}
         <Button
           type="submit"
           size="md"
@@ -70,7 +75,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
         </Button>
       </div>
       <p className="text-xs text-text-muted text-center mt-2">
-        Press Enter to send, Shift+Enter for new line
+        Press Enter to send, Shift+Enter for new line, or click mic to talk
       </p>
     </form>
   );

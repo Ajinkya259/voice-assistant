@@ -2,13 +2,11 @@
 Voice Assistant Agent - Main Entry Point
 
 This agent handles real-time voice conversations using:
-- Deepgram Nova-3 for Speech-to-Text
+- Deepgram Nova-2 for Speech-to-Text
 - Google Gemini 2.0 Flash for LLM responses
 - Deepgram Aura for Text-to-Speech
-- Mem0 + Qdrant for memory management
 """
 
-import asyncio
 import logging
 import os
 
@@ -26,18 +24,16 @@ logger = logging.getLogger("voice-assistant")
 
 
 def prewarm(proc: JobProcess):
-    """Prewarm the agent by loading models."""
+    """Prewarm the agent by loading VAD model."""
     proc.userdata["vad"] = silero.VAD.load()
 
 
 async def entrypoint(ctx: JobContext):
     """Main entry point for the voice assistant agent."""
 
-    # Get user metadata from room (contains user_id, preferences, etc.)
-    user_data = ctx.room.metadata or "{}"
     logger.info(f"Starting agent for room: {ctx.room.name}")
 
-    # Initialize the voice assistant pipeline
+    # System prompt for the assistant
     initial_ctx = llm.ChatContext().append(
         role="system",
         text="""You are a helpful, friendly voice assistant.
@@ -46,12 +42,12 @@ Your personality traits:
 - Warm and conversational
 - Concise in responses (keep answers brief for voice)
 - Helpful and knowledgeable
-- You can use tools to search the web or get weather information
 
 When responding:
 - Keep responses under 2-3 sentences for natural conversation
 - Ask clarifying questions when needed
-- Be natural and conversational""",
+- Be natural and conversational
+- Don't use markdown or formatting - speak naturally""",
     )
 
     # Connect to the room
@@ -61,7 +57,7 @@ When responding:
     participant = await ctx.wait_for_participant()
     logger.info(f"Participant joined: {participant.identity}")
 
-    # Initialize voice assistant with Deepgram STT/TTS and Gemini LLM
+    # Initialize voice assistant
     assistant = VoiceAssistant(
         vad=ctx.proc.userdata["vad"],
         stt=deepgram.STT(
@@ -73,7 +69,7 @@ When responding:
             temperature=0.7,
         ),
         tts=deepgram.TTS(
-            model="aura-asteria-en",  # Default voice, can be customized per user
+            model="aura-asteria-en",
         ),
         chat_ctx=initial_ctx,
     )
@@ -82,7 +78,7 @@ When responding:
     assistant.start(ctx.room, participant)
 
     # Initial greeting
-    await assistant.say("Hello! I'm your voice assistant. How can I help you today?")
+    await assistant.say("Hello! How can I help you today?", allow_interruptions=True)
 
     logger.info("Voice assistant started successfully")
 
