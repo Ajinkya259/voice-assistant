@@ -97,15 +97,73 @@ export async function storeInteraction(
 }
 
 /**
+ * Check if query likely needs memory context
+ * Skip memory for simple greetings, factual questions, etc.
+ */
+function needsMemoryContext(query: string): boolean {
+  const lowerQuery = query.toLowerCase().trim();
+
+  // Keywords that suggest memory is needed
+  const memoryKeywords = [
+    'remember', 'recalled', 'last time', 'before', 'previously',
+    'you said', 'i told you', 'my name', 'my favorite', 'i like',
+    'i prefer', 'i mentioned', 'we talked', 'we discussed',
+    'do you know', 'what do you know about me', 'who am i',
+  ];
+
+  // Check if any memory keyword is present
+  for (const keyword of memoryKeywords) {
+    if (lowerQuery.includes(keyword)) {
+      return true;
+    }
+  }
+
+  // Simple greetings and common queries don't need memory
+  const simplePatterns = [
+    /^(hi|hello|hey|good\s*(morning|afternoon|evening))[\s!.,?]*$/i,
+    /^how\s*are\s*you/i,
+    /^what('?s| is)\s*the\s*(weather|time|date)/i,
+    /^(tell|give)\s*me\s*(a\s*joke|the\s*(news|weather))/i,
+    /^(what|who|when|where|how|why)\s+(is|are|was|were|do|does|did|can|will)/i,
+  ];
+
+  for (const pattern of simplePatterns) {
+    if (pattern.test(lowerQuery)) {
+      return false;
+    }
+  }
+
+  // For longer queries (more than 10 words), might benefit from context
+  const wordCount = lowerQuery.split(/\s+/).length;
+  if (wordCount <= 5) {
+    return false; // Short queries rarely need memory
+  }
+
+  return true; // Default to fetching memory for longer/complex queries
+}
+
+/**
  * Build enhanced system prompt with memory context
+ * Optimized: skips memory retrieval for simple queries
  */
 export async function buildEnhancedPrompt(
   userId: string,
   basePrompt: string,
   userQuery: string
 ): Promise<string> {
+  // Skip memory for simple queries to reduce latency
+  if (!needsMemoryContext(userQuery)) {
+    console.log('[Memory] Skipping memory retrieval for simple query');
+    return basePrompt;
+  }
+
+  console.log('[Memory] Fetching memory context...');
+  const startTime = Date.now();
+
   const context = await getMemoryContext(userId, userQuery);
   const memorySection = formatMemoryForPrompt(context);
+
+  console.log(`[Memory] Retrieved in ${Date.now() - startTime}ms`);
 
   if (!memorySection) {
     return basePrompt;

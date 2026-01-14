@@ -15,12 +15,6 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Get user's conversations count
-  const { count: conversationsCount } = await supabase
-    .from('conversations')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user!.id);
-
   // Get user's assistant settings
   const { data: assistantSettings } = await supabase
     .from('assistant_settings')
@@ -54,7 +48,7 @@ export default async function DashboardPage() {
           variant="elevated"
           className="group cursor-pointer transition-all hover:shadow-large hover:-translate-y-0.5"
         >
-          <Link href="/dashboard/chat" className="block">
+          <Link href="/dashboard/chat?mode=voice" className="block">
             <CardContent className="flex items-center gap-4 p-6">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-100 text-primary-500 transition-colors group-hover:bg-primary-500 group-hover:text-white">
                 <Mic className="h-6 w-6" />
@@ -99,35 +93,6 @@ export default async function DashboardPage() {
               </div>
             </CardContent>
           </Link>
-        </Card>
-      </div>
-
-      {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card variant="outlined">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-text-muted">Conversations</p>
-                <p className="text-2xl font-semibold text-text-primary">{conversationsCount || 0}</p>
-              </div>
-              <MessageSquare className="h-8 w-8 text-text-muted" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card variant="outlined">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-text-muted">Assistant</p>
-                <p className="text-2xl font-semibold text-text-primary">
-                  {assistantSettings?.assistant_name || 'Assistant'}
-                </p>
-              </div>
-              <Sparkles className="h-8 w-8 text-text-muted" />
-            </div>
-          </CardContent>
         </Card>
       </div>
 

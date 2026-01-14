@@ -1,16 +1,23 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useEffect, useCallback, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useChatStore } from '@/stores/chat-store';
 import { ConversationSidebar } from './conversation-sidebar';
 import { MessageList } from './message-list';
 import { ChatInput } from './chat-input';
+import { VoiceRecorder } from '@/components/voice/voice-recorder';
 import { AlertCircle, X } from 'lucide-react';
 
 export function ChatContainer() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const conversationId = searchParams.get('c');
+  const mode = searchParams.get('mode');
+
+  // State for voice recorder modal
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
+  const [voiceConversationId, setVoiceConversationId] = useState<string | null>(null);
 
   // Use individual selectors to prevent unnecessary re-renders
   const conversations = useChatStore((state) => state.conversations);
@@ -37,6 +44,26 @@ export function ChatContainer() {
       selectConversation(conversationId);
     }
   }, [conversationId, conversations, currentConversation?.id, selectConversation]);
+
+  // Auto-open voice recorder when mode=voice
+  useEffect(() => {
+    if (mode === 'voice' && !showVoiceRecorder) {
+      // Create a new conversation for voice chat
+      createConversation().then((newConversation) => {
+        setVoiceConversationId(newConversation.id);
+        setShowVoiceRecorder(true);
+        // Remove mode from URL to prevent re-opening on refresh
+        router.replace(`/dashboard/chat?c=${newConversation.id}`);
+      }).catch(console.error);
+    }
+  }, [mode, showVoiceRecorder, createConversation, router]);
+
+  // Handle closing voice recorder
+  const handleCloseVoiceRecorder = useCallback(() => {
+    setShowVoiceRecorder(false);
+    setVoiceConversationId(null);
+    refreshMessages();
+  }, [refreshMessages]);
 
   // Memoize the voice message callback to prevent re-renders
   const handleVoiceMessage = useCallback(() => {
@@ -79,6 +106,15 @@ export function ChatContainer() {
           onVoiceMessage={handleVoiceMessage}
         />
       </div>
+
+      {/* Voice Recorder Modal */}
+      {showVoiceRecorder && (
+        <VoiceRecorder
+          onClose={handleCloseVoiceRecorder}
+          conversationId={voiceConversationId}
+          onTranscript={() => refreshMessages()}
+        />
+      )}
     </div>
   );
 }

@@ -100,7 +100,91 @@ export function useRealtimeVoice(options: UseRealtimeVoiceOptions = {}): UseReal
     }
   }, []);
 
-  // Speak text - NO dependencies, reads from refs
+  // TTS queue for streaming
+  const ttsQueueRef = useRef<string[]>([]);
+  const isSpeakingRef = useRef(false);
+  const selectedVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
+
+  // Get the best voice for TTS
+  const getVoice = useCallback(() => {
+    if (selectedVoiceRef.current) return selectedVoiceRef.current;
+
+    const voices = window.speechSynthesis?.getVoices() || [];
+    const gender = optionsRef.current.voiceGender || 'female';
+
+    let selectedVoice;
+    if (gender === 'male') {
+      selectedVoice = voices.find(v =>
+        v.lang.startsWith('en') &&
+        (v.name.includes('Daniel') || v.name.includes('Male') || v.name.includes('David') ||
+         v.name.includes('Google UK English Male') || v.name.includes('Alex') || v.name.includes('Tom'))
+      ) || voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('male'));
+    } else {
+      selectedVoice = voices.find(v =>
+        v.lang.startsWith('en') &&
+        (v.name.includes('Samantha') || v.name.includes('Female') || v.name.includes('Zira') ||
+         v.name.includes('Google US English') || v.name.includes('Karen') || v.name.includes('Victoria'))
+      ) || voices.find(v => v.lang.startsWith('en') && !v.name.toLowerCase().includes('male'));
+    }
+
+    if (!selectedVoice) {
+      selectedVoice = voices.find(v => v.lang.startsWith('en') && !v.localService) ||
+                      voices.find(v => v.lang.startsWith('en'));
+    }
+
+    selectedVoiceRef.current = selectedVoice || null;
+    return selectedVoice;
+  }, []);
+
+  // Speak a single sentence (for queue processing)
+  const speakSentence = useCallback((text: string): Promise<void> => {
+    return new Promise((resolve) => {
+      if (!window.speechSynthesis || !text.trim()) {
+        resolve();
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = optionsRef.current.lang || 'en-US';
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+
+      const voice = getVoice();
+      if (voice) {
+        utterance.voice = voice;
+      }
+
+      utterance.onend = () => resolve();
+      utterance.onerror = () => resolve();
+
+      window.speechSynthesis.speak(utterance);
+    });
+  }, [getVoice]);
+
+  // Process TTS queue - speaks sentences one by one
+  const processTTSQueue = useCallback(async () => {
+    if (isSpeakingRef.current) return;
+    isSpeakingRef.current = true;
+
+    while (ttsQueueRef.current.length > 0 && isActiveRef.current) {
+      const sentence = ttsQueueRef.current.shift();
+      if (sentence) {
+        setStateIfChanged('speaking');
+        await speakSentence(sentence);
+      }
+    }
+
+    isSpeakingRef.current = false;
+  }, [speakSentence, setStateIfChanged]);
+
+  // Add sentence to queue and start processing
+  const queueSentence = useCallback((sentence: string) => {
+    if (!sentence.trim()) return;
+    ttsQueueRef.current.push(sentence);
+    processTTSQueue();
+  }, [processTTSQueue]);
+
+  // Legacy speak function (for non-streaming fallback)
   const speak = useCallback((text: string): Promise<void> => {
     return new Promise((resolve) => {
       if (!window.speechSynthesis) {
@@ -116,31 +200,9 @@ export function useRealtimeVoice(options: UseRealtimeVoiceOptions = {}): UseReal
       utterance.rate = 1.0;
       utterance.pitch = 1.0;
 
-      const voices = window.speechSynthesis.getVoices();
-      const gender = optionsRef.current.voiceGender || 'female';
-
-      let selectedVoice;
-      if (gender === 'male') {
-        selectedVoice = voices.find(v =>
-          v.lang.startsWith('en') &&
-          (v.name.includes('Daniel') || v.name.includes('Male') || v.name.includes('David') ||
-           v.name.includes('Google UK English Male') || v.name.includes('Alex') || v.name.includes('Tom'))
-        ) || voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('male'));
-      } else {
-        selectedVoice = voices.find(v =>
-          v.lang.startsWith('en') &&
-          (v.name.includes('Samantha') || v.name.includes('Female') || v.name.includes('Zira') ||
-           v.name.includes('Google US English') || v.name.includes('Karen') || v.name.includes('Victoria'))
-        ) || voices.find(v => v.lang.startsWith('en') && !v.name.toLowerCase().includes('male'));
-      }
-
-      if (!selectedVoice) {
-        selectedVoice = voices.find(v => v.lang.startsWith('en') && !v.localService) ||
-                        voices.find(v => v.lang.startsWith('en'));
-      }
-
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
+      const voice = getVoice();
+      if (voice) {
+        utterance.voice = voice;
       }
 
       utterance.onstart = () => {
@@ -154,22 +216,48 @@ export function useRealtimeVoice(options: UseRealtimeVoiceOptions = {}): UseReal
 
       window.speechSynthesis.speak(utterance);
     });
-  }, [setStateIfChanged]);
+  }, [setStateIfChanged, getVoice]);
 
   // Use ref for startRecognitionInternal to avoid circular dependency
   const startRecognitionInternalRef = useRef<() => void>(() => {});
 
-  // Process transcript - reads from refs
+  // Extract sentences from text buffer - returns [completeSentences, remainingBuffer]
+  const extractSentences = useCallback((buffer: string): [string[], string] => {
+    const sentences: string[] = [];
+    let remaining = buffer;
+
+    // Match sentences ending with . ! ? followed by space or end of string
+    const sentenceRegex = /[^.!?]*[.!?]+(?:\s|$)/g;
+    let match;
+
+    while ((match = sentenceRegex.exec(buffer)) !== null) {
+      const sentence = match[0].trim();
+      if (sentence) {
+        sentences.push(sentence);
+      }
+      remaining = buffer.slice(sentenceRegex.lastIndex);
+    }
+
+    return [sentences, remaining];
+  }, []);
+
+  // Process transcript with STREAMING - reads from refs
   const processTranscript = useCallback(async (text: string) => {
     if (!text.trim() || isProcessingRef.current) return;
 
     isProcessingRef.current = true;
     setStateIfChanged('processing');
     setTranscript(text);
+    setError(null); // Clear any previous errors
     optionsRef.current.onUserSpeech?.(text);
 
+    // Clear TTS queue
+    ttsQueueRef.current = [];
+    window.speechSynthesis?.cancel();
+
     try {
-      const res = await fetch('/api/voice-chat', {
+      // Use streaming endpoint
+      const res = await fetch('/api/voice-chat?stream=true', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -180,8 +268,72 @@ export function useRealtimeVoice(options: UseRealtimeVoiceOptions = {}): UseReal
 
       if (!res.ok) throw new Error('Failed to get response');
 
-      const data = await res.json();
-      await speak(data.response);
+      // Check if response is streaming
+      const contentType = res.headers.get('content-type');
+
+      if (contentType?.includes('text/plain')) {
+        // Streaming response - process chunks
+        const reader = res.body?.getReader();
+        if (!reader) throw new Error('No reader available');
+
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let fullResponse = '';
+        let firstChunkReceived = false;
+        const startTime = Date.now();
+
+        while (true) {
+          const { done, value } = await reader.read();
+
+          if (done) {
+            // Process any remaining text in buffer
+            if (buffer.trim()) {
+              console.log(`[TTS] Final buffer: "${buffer.trim()}" at ${Date.now() - startTime}ms`);
+              queueSentence(buffer.trim());
+            }
+            console.log(`[TTS] Stream complete. Total: ${fullResponse.length} chars in ${Date.now() - startTime}ms`);
+            break;
+          }
+
+          const chunk = decoder.decode(value, { stream: true });
+          buffer += chunk;
+          fullResponse += chunk;
+
+          // Update response state for display
+          setResponse(fullResponse);
+
+          // On first chunk, user starts hearing response faster!
+          if (!firstChunkReceived) {
+            firstChunkReceived = true;
+            console.log(`[TTS] First chunk received at ${Date.now() - startTime}ms: "${chunk.substring(0, 50)}..."`);
+            setStateIfChanged('speaking');
+          }
+
+          // Extract complete sentences and queue them for TTS
+          const [sentences, remaining] = extractSentences(buffer);
+
+          for (const sentence of sentences) {
+            console.log(`[TTS] Queueing sentence at ${Date.now() - startTime}ms: "${sentence.substring(0, 50)}..."`);
+            queueSentence(sentence);
+          }
+
+          buffer = remaining;
+        }
+
+        // Notify callback with full response
+        optionsRef.current.onAssistantResponse?.(fullResponse);
+
+        // Wait for TTS queue to finish
+        while (isSpeakingRef.current || ttsQueueRef.current.length > 0) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+      } else {
+        // Non-streaming response (fallback)
+        const data = await res.json();
+        setResponse(data.response);
+        await speak(data.response);
+      }
 
       if (shouldRestartRef.current && isActiveRef.current) {
         setStateIfChanged('listening');
@@ -203,7 +355,7 @@ export function useRealtimeVoice(options: UseRealtimeVoiceOptions = {}): UseReal
     } finally {
       isProcessingRef.current = false;
     }
-  }, [speak, setStateIfChanged]);
+  }, [speak, setStateIfChanged, queueSentence, extractSentences]);
 
   // Internal function to start recognition
   const startRecognitionInternal = useCallback(() => {
