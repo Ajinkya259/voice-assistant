@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useChatStore } from '@/stores/chat-store';
 import { ConversationSidebar } from './conversation-sidebar';
@@ -12,20 +12,20 @@ export function ChatContainer() {
   const searchParams = useSearchParams();
   const conversationId = searchParams.get('c');
 
-  const {
-    conversations,
-    currentConversation,
-    messages,
-    isLoading,
-    isStreaming,
-    error,
-    loadConversations,
-    createConversation,
-    selectConversation,
-    deleteConversation,
-    sendMessage,
-    clearError,
-  } = useChatStore();
+  // Use individual selectors to prevent unnecessary re-renders
+  const conversations = useChatStore((state) => state.conversations);
+  const currentConversation = useChatStore((state) => state.currentConversation);
+  const messages = useChatStore((state) => state.messages);
+  const isLoading = useChatStore((state) => state.isLoading);
+  const isStreaming = useChatStore((state) => state.isStreaming);
+  const error = useChatStore((state) => state.error);
+  const loadConversations = useChatStore((state) => state.loadConversations);
+  const selectConversation = useChatStore((state) => state.selectConversation);
+  const deleteConversation = useChatStore((state) => state.deleteConversation);
+  const sendMessage = useChatStore((state) => state.sendMessage);
+  const clearError = useChatStore((state) => state.clearError);
+  const refreshMessages = useChatStore((state) => state.refreshMessages);
+  const createConversation = useChatStore((state) => state.createConversation);
 
   useEffect(() => {
     loadConversations();
@@ -37,6 +37,11 @@ export function ChatContainer() {
       selectConversation(conversationId);
     }
   }, [conversationId, conversations, currentConversation?.id, selectConversation]);
+
+  // Memoize the voice message callback to prevent re-renders
+  const handleVoiceMessage = useCallback(() => {
+    refreshMessages();
+  }, [refreshMessages]);
 
   return (
     <div className="flex h-full bg-background">
@@ -67,7 +72,12 @@ export function ChatContainer() {
         <MessageList messages={messages} isStreaming={isStreaming} />
 
         {/* Input */}
-        <ChatInput onSend={sendMessage} disabled={isStreaming} />
+        <ChatInput
+          onSend={sendMessage}
+          disabled={isStreaming}
+          conversationId={currentConversation?.id}
+          onVoiceMessage={handleVoiceMessage}
+        />
       </div>
     </div>
   );

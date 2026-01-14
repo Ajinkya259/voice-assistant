@@ -24,9 +24,9 @@ export default async function DashboardPage() {
   // Get user's assistant settings
   const { data: assistantSettings } = await supabase
     .from('assistant_settings')
-    .select('*')
+    .select('assistant_name, personality, voice_id')
     .eq('user_id', user!.id)
-    .single();
+    .single() as { data: { assistant_name?: string; personality?: string; voice_id?: string } | null };
 
   // Get recent conversations
   const { data: recentConversations } = await supabase

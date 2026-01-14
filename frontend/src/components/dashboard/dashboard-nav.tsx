@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Mic, Settings, LogOut, User, ChevronDown } from 'lucide-react';
+import { Mic, Settings, LogOut, User, ChevronDown, Brain } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { cn, getInitials } from '@/lib/utils';
 
@@ -90,6 +90,14 @@ export function DashboardNav({ user }: DashboardNavProps) {
                 </div>
 
                 <div className="py-1">
+                  <Link
+                    href="/dashboard/memory"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-text-primary hover:bg-surface-200"
+                  >
+                    <Brain className="h-4 w-4" />
+                    Memory
+                  </Link>
                   <Link
                     href="/dashboard/settings"
                     onClick={() => setIsMenuOpen(false)}

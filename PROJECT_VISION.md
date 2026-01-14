@@ -263,28 +263,35 @@ voice-assistant/
 
 ## Feature Roadmap
 
-### Phase 1: MVP
-- [ ] Project setup (Next.js + Supabase)
-- [ ] User authentication (OAuth)
-- [ ] Basic text chat with Gemini
-- [ ] Simple conversation history
+### Phase 1: MVP ✅
+- [x] Project setup (Next.js + Supabase)
+- [x] User authentication (OAuth + Email/Password)
+- [x] Basic text chat with Gemini (streaming)
+- [x] Simple conversation history
 
-### Phase 2: Voice Integration
-- [ ] LiveKit Agent setup
-- [ ] Deepgram STT integration
-- [ ] Deepgram TTS integration
-- [ ] Real-time voice conversation
+### Phase 2: Voice Integration ✅
+- [x] Browser-based voice (Web Speech API)
+- [x] Speech-to-text (Web Speech Recognition)
+- [x] Text-to-speech (Web Speech Synthesis)
+- [x] Real-time voice conversation with auto-restart
+- [ ] Deepgram STT/TTS integration (optional upgrade)
+- [x] LiveKit Agent setup (Python agent ready for Railway)
 
-### Phase 3: Memory System
-- [ ] Mem0 integration for user facts
-- [ ] Qdrant integration for semantic search
-- [ ] Cross-session memory recall
-- [ ] Multiple voice options
+### Phase 3: Memory System ✅
+- [x] Mem0 integration for user facts
+- [x] Qdrant integration for semantic search
+- [x] Cross-session memory recall
+- [x] Memory management UI (view/delete)
+- [x] Multiple voice options (Male/Female with preview)
 
-### Phase 4: Tools & Polish
-- [ ] Web search tool
-- [ ] Weather/news tools
-- [ ] UI/UX improvements
+### Phase 4: Tools & Polish ✅
+- [x] Web search tool (Serper.dev)
+- [x] Weather tool (wttr.in)
+- [x] Date/time tool (timezone-aware)
+- [x] Calculator tool
+- [x] News tool (Serper.dev /news endpoint)
+- [x] Settings page (name, personality, greeting)
+- [x] Dashboard with stats
 - [ ] Performance optimization
 
 ### Phase 5: Optional Features

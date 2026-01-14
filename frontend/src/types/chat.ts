@@ -31,6 +31,7 @@ export interface ChatActions {
   deleteConversation: (id: string) => Promise<void>;
   sendMessage: (content: string) => Promise<void>;
   clearError: () => void;
+  refreshMessages: () => Promise<void>;
 }
 
 export type ChatStore = ChatState & ChatActions;

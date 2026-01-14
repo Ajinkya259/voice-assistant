@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { VoiceButton } from '@/components/voice';
 import { Send } from 'lucide-react';
@@ -10,11 +10,17 @@ interface ChatInputProps {
   onSend: (message: string) => void;
   disabled?: boolean;
   showVoice?: boolean;
+  conversationId?: string | null;
+  onVoiceMessage?: () => void;
 }
 
-export function ChatInput({ onSend, disabled, showVoice = true }: ChatInputProps) {
+export function ChatInput({ onSend, disabled, showVoice = true, conversationId, onVoiceMessage }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Store onVoiceMessage in ref for stable callback
+  const onVoiceMessageRef = useRef(onVoiceMessage);
+  onVoiceMessageRef.current = onVoiceMessage;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +46,11 @@ export function ChatInput({ onSend, disabled, showVoice = true }: ChatInputProps
     }
   }, [message]);
 
+  // Stable callback for voice transcript
+  const handleVoiceTranscript = useCallback(() => {
+    onVoiceMessageRef.current?.();
+  }, []);
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -63,7 +74,11 @@ export function ChatInput({ onSend, disabled, showVoice = true }: ChatInputProps
           )}
         />
         {showVoice && (
-          <VoiceButton className="shrink-0 h-[46px] w-[46px]" />
+          <VoiceButton
+            className="shrink-0 h-[46px] w-[46px]"
+            conversationId={conversationId}
+            onTranscript={onVoiceMessage ? handleVoiceTranscript : undefined}
+          />
         )}
         <Button
           type="submit"

@@ -243,4 +243,35 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
+
+  // Refresh messages for current conversation (used after voice interactions)
+  refreshMessages: async () => {
+    const supabase = createClient();
+    const { currentConversation } = get();
+
+    if (!currentConversation) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('conversation_id', currentConversation.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      set({ messages: data || [] });
+
+      // Also refresh conversations list to update order/titles
+      const { data: convData } = await supabase
+        .from('conversations')
+        .select('*')
+        .order('updated_at', { ascending: false });
+
+      if (convData) {
+        set({ conversations: convData });
+      }
+    } catch (err) {
+      console.error('Failed to refresh messages:', err);
+    }
+  },
 }));
