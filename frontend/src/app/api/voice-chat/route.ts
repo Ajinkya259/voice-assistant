@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, SchemaType, type Tool } from '@google/generative-ai';
 import { createClient } from '@/lib/supabase/server';
 import { toolDeclarations, executeTool } from '@/lib/tools';
 import { buildEnhancedPrompt, storeInteraction } from '@/lib/memory';
@@ -78,22 +78,22 @@ When reporting news, always mention the date of the articles if available.`;
     console.log(`[Timing] After memory: ${Date.now() - requestStart}ms`);
 
     // Convert tool declarations to Gemini format
-    const tools = [{
+    const tools: Tool[] = [{
       functionDeclarations: toolDeclarations.map(tool => ({
         name: tool.name,
         description: tool.description,
         parameters: {
-          type: 'OBJECT' as const,
+          type: SchemaType.OBJECT,
           properties: Object.fromEntries(
             Object.entries(tool.parameters.properties).map(([key, value]) => [
               key,
-              { type: 'STRING' as const, description: (value as { description: string }).description }
+              { type: SchemaType.STRING, description: (value as { description: string }).description }
             ])
           ),
           required: tool.parameters.required || [],
         },
       })),
-    }];
+    } as Tool];
 
     // Call Gemini with tools
     const model = genAI.getGenerativeModel({
@@ -245,95 +245,6 @@ async function streamWithToolSupport(
         }
         controller.enqueue(encoder.encode(userMessage));
         controller.close();
-      }
-    },
-  });
-
-  return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/plain; charset=utf-8',
-      'Transfer-Encoding': 'chunked',
-      'Cache-Control': 'no-cache',
-    },
-  });
-}
-
-// Stream response after function calls (legacy)
-async function streamResponse(
-  chat: ReturnType<ReturnType<typeof genAI.getGenerativeModel>['startChat']>,
-  functionResults: Array<{ functionResponse: { name: string; response: { result: string } } }>,
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string,
-  conversationId: string | undefined,
-  transcript: string
-) {
-  const encoder = new TextEncoder();
-  let fullResponse = '';
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      try {
-        const result = await chat.sendMessageStream(functionResults);
-
-        for await (const chunk of result.stream) {
-          const text = chunk.text();
-          if (text) {
-            fullResponse += text;
-            controller.enqueue(encoder.encode(text));
-          }
-        }
-
-        controller.close();
-
-        // Save to database after streaming completes
-        await saveToDatabase(supabase, conversationId, transcript, fullResponse, userId);
-      } catch (error) {
-        console.error('Streaming error:', error);
-        controller.error(error);
-      }
-    },
-  });
-
-  return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/plain; charset=utf-8',
-      'Transfer-Encoding': 'chunked',
-      'Cache-Control': 'no-cache',
-    },
-  });
-}
-
-// Stream response directly (no function calls)
-async function streamResponseDirect(
-  chat: ReturnType<ReturnType<typeof genAI.getGenerativeModel>['startChat']>,
-  transcript: string,
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string,
-  conversationId: string | undefined
-) {
-  const encoder = new TextEncoder();
-  let fullResponse = '';
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      try {
-        const result = await chat.sendMessageStream(transcript);
-
-        for await (const chunk of result.stream) {
-          const text = chunk.text();
-          if (text) {
-            fullResponse += text;
-            controller.enqueue(encoder.encode(text));
-          }
-        }
-
-        controller.close();
-
-        // Save to database after streaming completes
-        await saveToDatabase(supabase, conversationId, transcript, fullResponse, userId);
-      } catch (error) {
-        console.error('Streaming error:', error);
-        controller.error(error);
       }
     },
   });

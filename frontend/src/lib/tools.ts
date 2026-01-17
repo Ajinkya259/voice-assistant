@@ -195,7 +195,7 @@ export function executeDateTime(timezone?: string): string {
 
     const formatted = now.toLocaleString('en-US', options);
     return `Current date and time in ${tz}: ${formatted}`;
-  } catch (error) {
+  } catch {
     // Invalid timezone, use UTC
     const now = new Date();
     return `Current UTC time: ${now.toUTCString()}`;
@@ -219,7 +219,7 @@ export function executeCalculate(expression: string): string {
     }
 
     return `${expression} = ${result}`;
-  } catch (error) {
+  } catch {
     return 'Could not calculate that expression. Please check the format.';
   }
 }

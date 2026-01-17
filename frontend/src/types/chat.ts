@@ -3,7 +3,7 @@ export interface Message {
   conversation_id: string;
   role: 'user' | 'assistant';
   content: string;
-  audio_url?: string;
+  audio_url: string | null;
   created_at: string;
 }
 

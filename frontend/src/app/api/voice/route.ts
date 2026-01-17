@@ -118,7 +118,7 @@ If you don't know something, say so briefly.`;
     console.log('TTS response size:', audioResponse.length, 'bytes');
 
     // 8. Return audio with transcript headers
-    return new Response(audioResponse, {
+    return new Response(audioResponse.buffer as ArrayBuffer, {
       headers: {
         'Content-Type': 'audio/wav',
         'X-Transcript': encodeURIComponent(transcript),

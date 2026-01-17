@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS assistant_settings (
   user_id UUID REFERENCES auth.users ON DELETE CASCADE UNIQUE NOT NULL,
   assistant_name TEXT DEFAULT 'Assistant' NOT NULL,
   voice_id TEXT DEFAULT 'aura-asteria-en' NOT NULL,
+  voice_gender TEXT DEFAULT 'female' NOT NULL,
   personality TEXT DEFAULT 'friendly and helpful' NOT NULL,
   greeting TEXT DEFAULT 'Hello! How can I help you today?' NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,

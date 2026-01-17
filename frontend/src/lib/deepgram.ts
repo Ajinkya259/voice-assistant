@@ -2,13 +2,16 @@
  * Speech-to-Text: Convert audio buffer to text
  * Using direct HTTP request for reliability
  */
-export async function speechToText(audioBuffer: Buffer, mimeType: string = 'audio/webm'): Promise<string> {
+export async function speechToText(audioBuffer: Buffer | Uint8Array, mimeType: string = 'audio/webm'): Promise<string> {
   const apiKey = process.env.DEEPGRAM_API_KEY;
   if (!apiKey) {
     throw new Error('DEEPGRAM_API_KEY not configured');
   }
 
   console.log('STT: Received audio buffer of size:', audioBuffer.length, 'bytes, type:', mimeType);
+
+  // Convert to Blob for web-compatible fetch body
+  const blob = new Blob([audioBuffer as BlobPart], { type: mimeType });
 
   const response = await fetch(
     'https://api.deepgram.com/v1/listen?model=nova-2&language=en&smart_format=true&punctuate=true',
@@ -18,7 +21,7 @@ export async function speechToText(audioBuffer: Buffer, mimeType: string = 'audi
         'Authorization': `Token ${apiKey}`,
         'Content-Type': mimeType,
       },
-      body: audioBuffer,
+      body: blob,
     }
   );
 
@@ -45,7 +48,7 @@ export async function speechToText(audioBuffer: Buffer, mimeType: string = 'audi
  * Text-to-Speech: Convert text to audio buffer
  * Using direct HTTP request for reliability
  */
-export async function textToSpeech(text: string, voice: string = 'aura-asteria-en'): Promise<Buffer> {
+export async function textToSpeech(text: string, voice: string = 'aura-asteria-en'): Promise<Uint8Array> {
   const apiKey = process.env.DEEPGRAM_API_KEY;
   if (!apiKey) {
     throw new Error('DEEPGRAM_API_KEY not configured');
@@ -70,7 +73,7 @@ export async function textToSpeech(text: string, voice: string = 'aura-asteria-e
   }
 
   const arrayBuffer = await response.arrayBuffer();
-  return Buffer.from(arrayBuffer);
+  return new Uint8Array(arrayBuffer);
 }
 
 /**
